@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, CheckCircle2, Newspaper, Target, ClipboardCheck, Calendar, FolderOpen, Info, ExternalLink } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { CourseTabs } from '@/components/course/CourseTabs';
@@ -22,9 +22,23 @@ const tabs = [
 
 const AcademicCoursePage = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   const course = getCourseById(courseId || '');
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tabs.some(t => t.id === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   if (!course) {
     return (
@@ -72,7 +86,7 @@ const AcademicCoursePage = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <CourseTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      <CourseTabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Content */}
       <div className="container px-4 md:px-6 py-8">
