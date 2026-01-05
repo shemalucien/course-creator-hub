@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, CheckCircle2, Newspaper, Target, ClipboardCheck, Calendar, FolderOpen, Info, ExternalLink } from 'lucide-react';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, BookOpen, CheckCircle2, Newspaper, Target, ClipboardCheck, Calendar, FolderOpen, Info, ExternalLink, UserPlus, Check } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { CourseTabs } from '@/components/course/CourseTabs';
 import { InstructorCard } from '@/components/course/InstructorCard';
 import { ScheduleTable } from '@/components/course/ScheduleTable';
 import { AssessmentTable } from '@/components/course/AssessmentTable';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { getCourseById } from '@/data/academicCourses';
 
 const tabs = [
@@ -25,6 +29,12 @@ const AcademicCoursePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [dbCourseId, setDbCourseId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   const course = getCourseById(courseId || '');
 
@@ -39,6 +49,115 @@ const AcademicCoursePage = () => {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Check if user is enrolled and get DB course ID
+  useEffect(() => {
+    if (user && course) {
+      checkEnrollmentStatus();
+    }
+  }, [user, course]);
+
+  const checkEnrollmentStatus = async () => {
+    if (!course) return;
+
+    try {
+      // First check if course exists in DB
+      const { data: dbCourse } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('code', course.code)
+        .maybeSingle();
+
+      if (dbCourse) {
+        setDbCourseId(dbCourse.id);
+
+        // Check enrollment
+        const { data: enrollment } = await supabase
+          .from('enrollments')
+          .select('id')
+          .eq('user_id', user?.id)
+          .eq('course_id', dbCourse.id)
+          .maybeSingle();
+
+        setIsEnrolled(!!enrollment);
+      }
+    } catch (error) {
+      console.error('Error checking enrollment:', error);
+    }
+  };
+
+  const handleEnroll = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!course) return;
+
+    setEnrolling(true);
+
+    try {
+      let courseDbId = dbCourseId;
+
+      // If course doesn't exist in DB, create it
+      if (!courseDbId) {
+        const { data: newCourse, error: courseError } = await supabase
+          .from('courses')
+          .insert({
+            code: course.code,
+            title: course.title,
+            description: course.description,
+            semester: course.semester,
+            prerequisites: course.prerequisites,
+            instructor_name: course.instructor.name,
+            instructor_email: course.instructor.email,
+            schedule_days: course.schedule.days,
+            schedule_time: course.schedule.time,
+            office_hours: course.instructor.officeHours,
+            textbooks: course.textbooks,
+            is_published: true
+          })
+          .select('id')
+          .single();
+
+        if (courseError) throw courseError;
+        courseDbId = newCourse.id;
+        setDbCourseId(courseDbId);
+      }
+
+      // Enroll user
+      const { error: enrollError } = await supabase
+        .from('enrollments')
+        .insert({
+          user_id: user.id,
+          course_id: courseDbId
+        });
+
+      if (enrollError) {
+        if (enrollError.message.includes('duplicate')) {
+          setIsEnrolled(true);
+          toast({ title: 'Already enrolled', description: 'You are already enrolled in this course.' });
+          return;
+        }
+        throw enrollError;
+      }
+
+      setIsEnrolled(true);
+      toast({
+        title: 'Enrolled successfully!',
+        description: `You are now enrolled in ${course.code}.`,
+      });
+    } catch (error: any) {
+      console.error('Enrollment error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Enrollment failed',
+        description: error.message,
+      });
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   if (!course) {
     return (
@@ -69,19 +188,41 @@ const AcademicCoursePage = () => {
             All Courses
           </Link>
           
-          <div className="flex items-start gap-3 mb-2">
-            <Badge variant="outline" className="border-primary/50 text-primary font-mono text-base px-3 py-1">
-              {course.code}
-            </Badge>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <div className="flex items-start gap-3 mb-2">
+                <Badge variant="outline" className="border-primary/50 text-primary font-mono text-base px-3 py-1">
+                  {course.code}
+                </Badge>
+              </div>
+              
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+                {course.title}
+              </h1>
+              
+              <p className="text-lg text-primary font-medium">
+                {course.semester}
+              </p>
+            </div>
+
+            <div className="flex-shrink-0">
+              {isEnrolled ? (
+                <Button disabled className="bg-course-complete text-white">
+                  <Check className="h-4 w-4 mr-2" />
+                  Enrolled
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleEnroll}
+                  disabled={enrolling}
+                  className="bg-gradient-primary shadow-glow"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {enrolling ? 'Enrolling...' : 'Enroll in Course'}
+                </Button>
+              )}
+            </div>
           </div>
-          
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
-            {course.title}
-          </h1>
-          
-          <p className="text-lg text-primary font-medium">
-            {course.semester}
-          </p>
         </div>
       </div>
 
