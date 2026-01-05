@@ -1,4 +1,4 @@
-import { FileText, ClipboardList, Download, ExternalLink } from 'lucide-react';
+import { FileText, ClipboardList, Download, ExternalLink, Presentation } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -56,7 +56,25 @@ export function ScheduleTable({ schedule }: ScheduleTableProps) {
           {schedule.map((item, index) => (
             <TableRow key={index} className="hover:bg-secondary/20">
               <TableCell className="font-medium text-primary">{item.chapter}</TableCell>
-              <TableCell className="font-medium">{item.topic}</TableCell>
+              <TableCell>
+                <a 
+                  href={item.slideUrl || '#'}
+                  download
+                  className="group inline-flex items-center gap-2 font-medium text-foreground hover:text-primary transition-colors"
+                  onClick={(e) => {
+                    if (!item.slideUrl) {
+                      e.preventDefault();
+                      alert('Slides will be available soon!');
+                    }
+                  }}
+                >
+                  <Presentation className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="border-b border-dashed border-muted-foreground/50 group-hover:border-primary">
+                    {item.topic}
+                  </span>
+                  <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all" />
+                </a>
+              </TableCell>
               <TableCell>
                 <ul className="text-sm text-muted-foreground space-y-0.5">
                   {item.notes.map((note, i) => (

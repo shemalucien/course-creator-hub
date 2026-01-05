@@ -17,6 +17,7 @@ export interface AssessmentItem {
 export interface ScheduleItem {
   chapter: string;
   topic: string;
+  slideUrl?: string;
   notes: string[];
   resources: { name: string; type: 'assignment' | 'activity' | 'template' | 'link' }[];
 }
