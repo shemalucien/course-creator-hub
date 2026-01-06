@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Menu, User, LogOut, Settings } from 'lucide-react';
+import { BookOpen, Menu, User, LogOut, Settings, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -11,10 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { academicCourses } from '@/data/academicCourses';
 
 export function Header() {
   const { user, signOut } = useAuth();
+  const { isInstructor } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -75,10 +77,20 @@ export function Header() {
                     <p className="text-sm font-medium truncate max-w-[160px]">
                       {user.email}
                     </p>
-                    <p className="text-xs text-muted-foreground">Student</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isInstructor ? 'Instructor' : 'Student'}
+                    </p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
+                {isInstructor && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard" className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />

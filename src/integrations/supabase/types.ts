@@ -248,6 +248,79 @@ export type Database = {
           },
         ]
       }
+      notification_recipients: {
+        Row: {
+          created_at: string
+          email_sent: boolean | null
+          id: string
+          notification_id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          notification_id: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          notification_id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_recipients_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          course_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          notification_type: string
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          notification_type?: string
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          notification_type?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -280,6 +353,148 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quiz_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          id: string
+          max_score: number | null
+          percentage: number | null
+          quiz_id: string
+          score: number | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          id?: string
+          max_score?: number | null
+          percentage?: number | null
+          quiz_id: string
+          score?: number | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          id?: string
+          max_score?: number | null
+          percentage?: number | null
+          quiz_id?: string
+          score?: number | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          id: string
+          options: Json
+          points: number
+          question_text: string
+          question_type: string
+          quiz_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          id?: string
+          options?: Json
+          points?: number
+          question_text: string
+          question_type?: string
+          quiz_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          id?: string
+          options?: Json
+          points?: number
+          question_text?: string
+          question_type?: string
+          quiz_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean | null
+          passing_score: number | null
+          schedule_item_id: string | null
+          time_limit_minutes: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          passing_score?: number | null
+          schedule_item_id?: string | null
+          time_limit_minutes?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          passing_score?: number | null
+          schedule_item_id?: string | null
+          time_limit_minutes?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quizzes_schedule_item_id_fkey"
+            columns: ["schedule_item_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resources: {
         Row: {
@@ -336,6 +551,8 @@ export type Database = {
           slide_url: string | null
           sort_order: number | null
           topic: string
+          video_type: string | null
+          video_url: string | null
         }
         Insert: {
           chapter: string
@@ -346,6 +563,8 @@ export type Database = {
           slide_url?: string | null
           sort_order?: number | null
           topic: string
+          video_type?: string | null
+          video_url?: string | null
         }
         Update: {
           chapter?: string
@@ -356,6 +575,8 @@ export type Database = {
           slide_url?: string | null
           sort_order?: number | null
           topic?: string
+          video_type?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -367,15 +588,46 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_roles: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "instructor" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -502,6 +754,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "instructor", "student"],
+    },
   },
 } as const

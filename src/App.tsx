@@ -10,6 +10,15 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import CoursesPage from "./pages/admin/CoursesPage";
+import CourseEditor from "./pages/admin/CourseEditor";
+import QuizzesPage from "./pages/admin/QuizzesPage";
+import QuizEditor from "./pages/admin/QuizEditor";
+import StudentsPage from "./pages/admin/StudentsPage";
+import NotificationsPage from "./pages/admin/NotificationsPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,6 +33,16 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/course/:courseId" element={<AcademicCoursePage />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/courses" element={<CoursesPage />} />
+            <Route path="/admin/courses/:courseId" element={<CourseEditor />} />
+            <Route path="/admin/quizzes" element={<QuizzesPage />} />
+            <Route path="/admin/quizzes/:quizId" element={<QuizEditor />} />
+            <Route path="/admin/students" element={<StudentsPage />} />
+            <Route path="/admin/notifications" element={<NotificationsPage />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

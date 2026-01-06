@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, CheckCircle2, Newspaper, Target, ClipboardCheck, Calendar, FolderOpen, Info, ExternalLink, UserPlus, Check } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle2, Newspaper, Target, ClipboardCheck, Calendar, FolderOpen, Info, ExternalLink, UserPlus, Check, PlayCircle } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { CourseTabs } from '@/components/course/CourseTabs';
 import { InstructorCard } from '@/components/course/InstructorCard';
@@ -9,10 +9,14 @@ import { AssessmentTable } from '@/components/course/AssessmentTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getCourseById } from '@/data/academicCourses';
+import { QuizCard } from '@/components/quiz/QuizCard';
+import { QuizPlayer } from '@/components/quiz/QuizPlayer';
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -20,6 +24,7 @@ const tabs = [
   { id: 'outcomes', label: 'Learning Outcomes' },
   { id: 'assessment', label: 'Assessment' },
   { id: 'schedule', label: 'Schedule' },
+  { id: 'quizzes', label: 'Quizzes' },
   { id: 'resources', label: 'Course Resources' },
   { id: 'general', label: 'General Resources' },
 ];
@@ -32,6 +37,11 @@ const AcademicCoursePage = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [dbCourseId, setDbCourseId] = useState<string | null>(null);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<Record<string, any>>({});
+  const [selectedQuiz, setSelectedQuiz] = useState<any | null>(null);
+  const [scheduleItems, setScheduleItems] = useState<any[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -56,6 +66,14 @@ const AcademicCoursePage = () => {
       checkEnrollmentStatus();
     }
   }, [user, course]);
+
+  // Fetch quizzes when we have the db course id
+  useEffect(() => {
+    if (dbCourseId) {
+      fetchQuizzes();
+      fetchScheduleItems();
+    }
+  }, [dbCourseId]);
 
   const checkEnrollmentStatus = async () => {
     if (!course) return;
@@ -83,6 +101,60 @@ const AcademicCoursePage = () => {
       }
     } catch (error) {
       console.error('Error checking enrollment:', error);
+    }
+  };
+
+  const fetchQuizzes = async () => {
+    if (!dbCourseId) return;
+
+    try {
+      const { data: quizzesData } = await supabase
+        .from('quizzes')
+        .select('*')
+        .eq('course_id', dbCourseId)
+        .eq('is_published', true)
+        .order('created_at');
+
+      setQuizzes(quizzesData || []);
+
+      // Fetch user's attempts
+      if (user && quizzesData && quizzesData.length > 0) {
+        const quizIds = quizzesData.map(q => q.id);
+        const { data: attempts } = await supabase
+          .from('quiz_attempts')
+          .select('*')
+          .eq('user_id', user.id)
+          .in('quiz_id', quizIds)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: false });
+
+        // Get best attempt per quiz
+        const attemptsMap: Record<string, any> = {};
+        (attempts || []).forEach(attempt => {
+          if (!attemptsMap[attempt.quiz_id] || attempt.percentage > attemptsMap[attempt.quiz_id].percentage) {
+            attemptsMap[attempt.quiz_id] = attempt;
+          }
+        });
+        setQuizAttempts(attemptsMap);
+      }
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+    }
+  };
+
+  const fetchScheduleItems = async () => {
+    if (!dbCourseId) return;
+
+    try {
+      const { data } = await supabase
+        .from('schedule_items')
+        .select('*')
+        .eq('course_id', dbCourseId)
+        .order('sort_order');
+
+      setScheduleItems(data || []);
+    } catch (error) {
+      console.error('Error fetching schedule items:', error);
     }
   };
 
@@ -336,6 +408,58 @@ const AcademicCoursePage = () => {
                 </div>
                 
                 <ScheduleTable schedule={course.tentativeSchedule} />
+
+                {/* Videos from schedule items */}
+                {scheduleItems.filter(item => item.video_url).length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <PlayCircle className="h-5 w-5 text-primary" />
+                      Lecture Videos
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {scheduleItems.filter(item => item.video_url).map((item) => (
+                        <Card key={item.id} className="cursor-pointer hover:border-primary/50" onClick={() => setSelectedVideo(item)}>
+                          <CardContent className="p-4">
+                            <p className="font-medium">{item.chapter}: {item.topic}</p>
+                            <p className="text-sm text-muted-foreground mt-1">Click to watch</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Quizzes Tab */}
+            {activeTab === 'quizzes' && (
+              <section className="animate-fade-in">
+                <div className="flex items-center gap-2 mb-6">
+                  <ClipboardCheck className="h-5 w-5 text-primary" />
+                  <h2 className="text-2xl font-bold">Quizzes</h2>
+                </div>
+                
+                {!user ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <p className="text-muted-foreground mb-4">Sign in to take quizzes</p>
+                      <Button onClick={() => navigate('/auth')}>Sign In</Button>
+                    </CardContent>
+                  </Card>
+                ) : quizzes.length === 0 ? (
+                  <p className="text-muted-foreground">No quizzes available yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {quizzes.map((quiz) => (
+                      <QuizCard
+                        key={quiz.id}
+                        quiz={quiz}
+                        attempt={quizAttempts[quiz.id]}
+                        onStart={() => setSelectedQuiz(quiz)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 
@@ -431,6 +555,37 @@ const AcademicCoursePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Quiz Dialog */}
+      <Dialog open={!!selectedQuiz} onOpenChange={() => setSelectedQuiz(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedQuiz && (
+            <QuizPlayer
+              quizId={selectedQuiz.id}
+              title={selectedQuiz.title}
+              timeLimitMinutes={selectedQuiz.time_limit_minutes}
+              onComplete={() => fetchQuizzes()}
+              onClose={() => setSelectedQuiz(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Dialog */}
+      <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
+        <DialogContent className="max-w-4xl">
+          {selectedVideo && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">{selectedVideo.chapter}: {selectedVideo.topic}</h3>
+              <VideoPlayer
+                videoUrl={selectedVideo.video_url}
+                videoType={selectedVideo.video_type || 'youtube'}
+                title={selectedVideo.topic}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
