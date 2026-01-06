@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
@@ -50,7 +50,7 @@ export default function AuthPage() {
   });
 
   const handleToggleForm = () => {
-    setIsLogin(!isLogin);
+    setIsLogin((v) => !v);
     setShowPassword(false);
     loginForm.reset();
     signupForm.reset();
@@ -129,154 +129,173 @@ export default function AuthPage() {
             </CardHeader>
             <CardContent>
               {isLogin ? (
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                    <FormField
-                      control={loginForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="you@example.com" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input 
-                                type={showPassword ? 'text' : 'password'} 
-                                placeholder="••••••••" 
-                                className="pl-10 pr-10" 
-                                {...field} 
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                              >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
-                      {isLoading ? 'Signing in...' : 'Sign In'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </form>
-                </Form>
+                <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4" noValidate>
+                  <div className="space-y-2 text-left">
+                    <label htmlFor="login-email" className="text-sm font-medium">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-email"
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        inputMode="email"
+                        className="pl-10"
+                        {...loginForm.register('email')}
+                      />
+                    </div>
+                    {loginForm.formState.errors.email?.message ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {loginForm.formState.errors.email.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label htmlFor="login-password" className="text-sm font-medium">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        className="pl-10 pr-10"
+                        {...loginForm.register('password')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {loginForm.formState.errors.password?.message ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {loginForm.formState.errors.password.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
+                    {isLoading ? 'Signing in...' : 'Sign In'}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </form>
               ) : (
-                <Form {...signupForm}>
-                  <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
-                    <FormField
-                      control={signupForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="John Doe" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={signupForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="you@example.com" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={signupForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input 
-                                type={showPassword ? 'text' : 'password'} 
-                                placeholder="••••••••" 
-                                className="pl-10 pr-10" 
-                                {...field} 
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                              >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={signupForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="••••••••" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
-                      {isLoading ? 'Creating account...' : 'Create Account'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </form>
-                </Form>
+                <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4" noValidate>
+                  <div className="space-y-2 text-left">
+                    <label htmlFor="signup-full-name" className="text-sm font-medium">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-full-name"
+                        placeholder="John Doe"
+                        autoComplete="name"
+                        className="pl-10"
+                        {...signupForm.register('fullName')}
+                      />
+                    </div>
+                    {signupForm.formState.errors.fullName?.message ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {signupForm.formState.errors.fullName.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label htmlFor="signup-email" className="text-sm font-medium">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-email"
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        inputMode="email"
+                        className="pl-10"
+                        {...signupForm.register('email')}
+                      />
+                    </div>
+                    {signupForm.formState.errors.email?.message ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {signupForm.formState.errors.email.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label htmlFor="signup-password" className="text-sm font-medium">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        className="pl-10 pr-10"
+                        {...signupForm.register('password')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {signupForm.formState.errors.password?.message ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {signupForm.formState.errors.password.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label htmlFor="signup-confirm-password" className="text-sm font-medium">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-confirm-password"
+                        type="password"
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        className="pl-10"
+                        {...signupForm.register('confirmPassword')}
+                      />
+                    </div>
+                    {signupForm.formState.errors.confirmPassword?.message ? (
+                      <p className="text-sm font-medium text-destructive">
+                        {signupForm.formState.errors.confirmPassword.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
+                    {isLoading ? 'Creating account...' : 'Create Account'}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </form>
               )}
 
               <div className="mt-6 text-center text-sm">
                 <span className="text-muted-foreground">
                   {isLogin ? "Don't have an account? " : 'Already have an account? '}
                 </span>
-                <button
-                  type="button"
-                  onClick={handleToggleForm}
-                  className="text-primary hover:underline font-medium"
-                >
+                <button type="button" onClick={handleToggleForm} className="text-primary hover:underline font-medium">
                   {isLogin ? 'Sign up' : 'Sign in'}
                 </button>
               </div>
