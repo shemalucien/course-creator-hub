@@ -40,12 +40,21 @@ export default function AuthPage() {
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
+    mode: 'onChange',
   });
 
   const signupForm = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+    mode: 'onChange',
   });
+
+  const handleToggleForm = () => {
+    setIsLogin(!isLogin);
+    setShowPassword(false);
+    loginForm.reset();
+    signupForm.reset();
+  };
 
   const onLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -265,7 +274,7 @@ export default function AuthPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsLogin(!isLogin)}
+                  onClick={handleToggleForm}
                   className="text-primary hover:underline font-medium"
                 >
                   {isLogin ? 'Sign up' : 'Sign in'}
